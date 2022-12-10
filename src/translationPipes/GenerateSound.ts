@@ -17,15 +17,15 @@ export interface GeneratedMap {
 function getVoiceForLanguage(language: LanguageBCP47Code): string {
     switch (language) {
         case LanguageBCP47Code.Cs:
-            return 'VlastaNeural'
+            return 'cs-CZ-VlastaNeural'
         case LanguageBCP47Code.En:
-            return 'SoniaNeural'
+            return 'en-GB-SoniaNeural'
         case LanguageBCP47Code.Pl:
-            return 'AgnieszkaNeural'
+            return 'pl-PL-AgnieszkaNeural'
         case LanguageBCP47Code.Sk:
-            return 'LukasNeural'
+            return 'sk-SK-LukasNeural'
         case LanguageBCP47Code.Uk:
-            return 'PolinaNeural'
+            return 'uk-UA-PolinaNeural'
     }
 }
 
@@ -63,7 +63,7 @@ export class GenerateSound implements TranslationPipe {
         // Ensure that folder exists
         let directory = this.baseDir
 
-        const directoryParts = [`${useLanguage}-sounds`, folderPrefix];
+        const directoryParts = [`${useLanguage}-sounds`, folderPrefix]
         const directoryName = directoryParts.join('/')
 
         for (const folder of directoryParts) {
@@ -96,10 +96,7 @@ export class GenerateSound implements TranslationPipe {
     ): Promise<boolean> {
         return new Promise((resolve, reject) => {
             if (typeof this.generatedMap[fileName] === 'string') {
-                log.debug(
-                    'Sound already generated for given translation',
-                    text
-                )
+                log.debug('Sound already generated for given translation', text)
                 resolve(true)
                 return
             }
@@ -133,9 +130,6 @@ export class GenerateSound implements TranslationPipe {
             )
             speechConfig.speechSynthesisOutputFormat =
                 sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
-            speechConfig.speechSynthesisLanguage = languageBCP47Code
-            speechConfig.speechSynthesisVoiceName =
-                languageBCP47Code + '-' + getVoiceForLanguage(languageBCP47Code)
 
             // create the speech synthesizer.
             const synthesizer = new sdk.SpeechSynthesizer(
@@ -143,9 +137,22 @@ export class GenerateSound implements TranslationPipe {
                 audioConfig
             )
 
+            const ssml = `
+                <speak 
+                    xmlns="http://www.w3.org/2001/10/synthesis"
+                    xmlns:mstts="http://www.w3.org/2001/mstts"
+                    xmlns:emo="http://www.w3.org/2009/10/emotionml"
+                    version="1.0" xml:lang="${languageBCP47Code}"
+                >
+                    <voice name="${getVoiceForLanguage(languageBCP47Code)}">
+                        ${text}
+                    </voice>
+                </speak>
+            `
+
             // start the synthesizer and wait for a result.
-            synthesizer.speakTextAsync(
-                text,
+            synthesizer.speakSsmlAsync(
+                ssml,
                 result => {
                     synthesizer.close()
 
